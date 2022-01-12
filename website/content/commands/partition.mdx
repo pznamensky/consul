@@ -71,6 +71,15 @@ The `create` subcommand sends a request to the server to create a new admin part
 consul partition create <OPTIONS>
 ```
 
+#### Details
+- **Corresponding HTTP API Endpoint**: [\[PUT\] /v1/partition](/api-docs/admin-partitions#create-a-partition)
+- **Required ACLs**: `operator:write`
+
+Configuration of [blocking queries](/api/features/blocking) and [agent caching](/api/features/caching)
+are not supported from commands, but may be from the corresponding HTTP endpoint.
+
+#### Command Options
+
 The admin partition is created according to the values specified in the options. You can specify the following options:
 
 | Option | Description | Default | Required |
@@ -131,9 +140,27 @@ consul partition write -format  json -show-meta - <<< 'name = "webdev-bu" descri
 }
 ```
 
+#### Details
+- **Corresponding HTTP API Endpoint**: [\[PUT\] /v1/partition/:name](/api-docs/admin-partitions#update-a-partition)
+- **Required ACLs**: `operator:write`
+
+Configuration of [blocking queries](/api/features/blocking) and [agent caching](/api/features/caching)
+are not supported from commands, but may be from the corresponding HTTP endpoint.
+
+#### Command Options
+
 ### `read`
 
 The `read` subcommand sends a request to the server to read the configuration for the specified partition and print it to the console.
+
+#### Details
+
+- **Corresponding HTTP Endpoint**: [\[GET\] /v1/partition/:name](/api-docs/admin-partitions#read-a-partition)
+- **Required ACLs**: `operator:write`
+- **Blocking queries**: not supported from commands, but may be from the corresponding HTTP endpoint
+- **Agent caching**: not supported from commands, but may be from the corresponding HTTP endpoint
+
+#### Usage
 
 ```shell-session
 consul partition read <OPTIONS> <PARTITION_NAME>
@@ -161,6 +188,15 @@ consul partition read -format json -meta webdev
 ### `list`
 
 The `list` subcommand prints existing admin partitions to the console.
+
+| Detail | Info |
+| ------ | ---- |
+| Corresponding HTTP Endpoint | [\[GET\] /v1/partitions](/api-docs/admin-partitions#list-all-partitions) |
+| Required ACLs               | `operator:write` |
+| [Blocking queries]((/api/features/blocking)) | not supported from commands, but may be from the corresponding HTTP endpoint |
+| [Agent caching](/api/features/caching) | not supported from commands, but may be from the corresponding HTTP endpoint |
+
+#### Usage
 
 ```shell-session
 consul partition list <OPTIONS>
