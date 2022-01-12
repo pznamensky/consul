@@ -1,11 +1,14 @@
 package consul
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
 	"testing"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	msgpackrpc "github.com/hashicorp/net-rpc-msgpackrpc"
 	"github.com/stretchr/testify/require"
@@ -257,6 +260,67 @@ func TestConfigEntry_Get(t *testing.T) {
 	require.True(ok)
 	require.Equal("foo", serviceConf.Name)
 	require.Equal(structs.ServiceDefaults, serviceConf.Kind)
+}
+
+func TestConfigEntry_Get_BlockOnNonExistent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("too slow for testing.Short")
+	}
+
+	_, s1 := testServerWithConfig(t)
+	codec := rpcClient(t, s1)
+	store := s1.fsm.State()
+
+	entry := &structs.ServiceConfigEntry{
+		Kind: structs.ServiceDefaults,
+		Name: "alpha",
+	}
+	require.NoError(t, store.EnsureConfigEntry(1, entry))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var count int
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		args := structs.ConfigEntryQuery{
+			Kind: structs.ServiceDefaults,
+			Name: "does-not-exist",
+		}
+		args.QueryOptions.MaxQueryTime = time.Second
+
+		for ctx.Err() == nil {
+			var out structs.ConfigEntryResponse
+
+			err := msgpackrpc.CallWithCodec(codec, "ConfigEntry.Get", &args, &out)
+			if err != nil {
+				return err
+			}
+			t.Log("blocking query index", out.QueryMeta.Index, out.Entry)
+			count++
+			args.QueryOptions.MinQueryIndex = out.QueryMeta.Index
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		for i := uint64(0); i < 200; i++ {
+			time.Sleep(5 * time.Millisecond)
+			entry := &structs.ServiceConfigEntry{
+				Kind: structs.ServiceDefaults,
+				Name: fmt.Sprintf("other%d", i),
+			}
+			if err := store.EnsureConfigEntry(i+2, entry); err != nil {
+				return err
+			}
+		}
+		cancel()
+		return nil
+	})
+
+	require.NoError(t, g.Wait())
+	require.Equal(t, 2, count)
 }
 
 func TestConfigEntry_Get_ACLDeny(t *testing.T) {
