@@ -52,14 +52,33 @@ Anything written to stdout is logged.
 Here is an example configuration, where `handler_type` is optionally set to
 `script`:
 
+<CodeTabs heading="Consul watches defined in agent configuration">
+
+```hcl
+watches = [
+  {
+    type = "key"
+    key = "foo/bar/baz"
+    handler_type = "script"
+    args = ["/usr/bin/my-service-handler.sh", "-redis"]
+  }
+]
+```
+
 ```json
 {
-  "type": "key",
-  "key": "foo/bar/baz",
-  "handler_type": "script",
-  "args": ["/usr/bin/my-service-handler.sh", "-redis"]
+  "watches": [
+    {
+      "type": "key",
+      "key": "foo/bar/baz",
+      "handler_type": "script",
+      "args": ["/usr/bin/my-service-handler.sh", "-redis"]
+    }
+  ]
 }
 ```
+
+</CodeTabs>
 
 Prior to Consul 1.0, watches used a single `handler` field to define the command to run, and
 would always run in a shell. In Consul 1.0, the `args` array was added so that handlers can be
@@ -80,20 +99,47 @@ always sent as a JSON payload.
 
 Here is an example configuration:
 
+<CodeTabs>
+
+```hcl
+watches = [
+  {
+    type = "key"
+    key = "foo/bar/baz"
+    handler_type = "http"
+    http_handler_config {
+      path = "https://localhost:8000/watch"
+      method = "POST"
+      header = {
+        x-foo = ["bar", "baz"]
+      }
+      timeout = "10s"
+      tls_skip_verify = false
+    }
+  }
+]
+```
+
 ```json
 {
-  "type": "key",
-  "key": "foo/bar/baz",
-  "handler_type": "http",
-  "http_handler_config": {
-    "path": "https://localhost:8000/watch",
-    "method": "POST",
-    "header": { "x-foo": ["bar", "baz"] },
-    "timeout": "10s",
-    "tls_skip_verify": false
-  }
+  "watches": [
+    {
+      "type": "key",
+      "key": "foo/bar/baz",
+      "handler_type": "http",
+      "http_handler_config": {
+        "path": "https://localhost:8000/watch",
+        "method": "POST",
+        "header": { "x-foo": ["bar", "baz"] },
+        "timeout": "10s",
+        "tls_skip_verify": false
+      }
+    }
+  ]
 }
 ```
+
+</CodeTabs>
 
 ## Global Parameters
 
@@ -126,6 +172,16 @@ This maps to the `/v1/kv/` API internally.
 
 Here is an example configuration:
 
+<CodeTabs>
+
+```hcl
+{
+  type = "key"
+  key = "foo/bar/baz"
+  args = ["/usr/bin/my-service-handler.sh", "-redis"]
+}
+```
+
 ```json
 {
   "type": "key",
@@ -133,6 +189,8 @@ Here is an example configuration:
   "args": ["/usr/bin/my-service-handler.sh", "-redis"]
 }
 ```
+
+</CodeTabs>
 
 Or, using the watch command:
 
@@ -165,6 +223,16 @@ This maps to the `/v1/kv/` API internally.
 
 Here is an example configuration:
 
+<CodeTabs>
+
+```hcl
+{
+  type = "keyprefix"
+  prefix = "foo/"
+  args = ["/usr/bin/my-prefix-handler.sh", "-redis"]
+}
+```
+
 ```json
 {
   "type": "keyprefix",
@@ -172,6 +240,8 @@ Here is an example configuration:
   "args": ["/usr/bin/my-prefix-handler.sh", "-redis"]
 }
 ```
+
+</CodeTabs>
 
 Or, using the watch command:
 
@@ -181,7 +251,7 @@ $ consul watch -type=keyprefix -prefix=foo/ /usr/bin/my-prefix-handler.sh
 
 An example of the output of this command:
 
-```text
+```json
 [
   {
     Key: 'foo/bar',
@@ -239,7 +309,7 @@ This maps to the `/v1/catalog/nodes` API internally.
 
 An example of the output of this command:
 
-```text
+```json
 [
   {
     Node: 'nyc1-consul-1',
@@ -282,6 +352,17 @@ This maps to the `/v1/health/service` API internally.
 
 Here is an example configuration with a single tag:
 
+<CodeTabs>
+
+```hcl
+{
+  type = "service"
+  service = "redis"
+  args = ["/usr/bin/my-service-handler.sh", "-redis"]
+  tag = "bar"
+}
+```
+
 ```json
 {
   "type": "service",
@@ -291,7 +372,20 @@ Here is an example configuration with a single tag:
 }
 ```
 
+</CodeTabs>
+
 Here is an example configuration with multiple tags:
+
+<CodeTabs>
+
+```hcl
+{
+  type = "service"
+  service = "redis"
+  args = ["/usr/bin/my-service-handler.sh", "-redis"]
+  tag = ["bar", "foo"]
+}
+```
 
 ```json
 {
@@ -302,6 +396,8 @@ Here is an example configuration with multiple tags:
 }
 ```
 
+</CodeTabs>
+
 Or, using the watch command:
 
 Single tag:
@@ -310,7 +406,7 @@ Single tag:
 $ consul watch -type=service -service=redis -tag=bar /usr/bin/my-service-handler.sh
 ```
 
-Multiple tag:
+Multiple tags:
 
 ```shell-session
 $ consul watch -type=service -service=redis -tag=bar -tag=foo /usr/bin/my-service-handler.sh
@@ -318,7 +414,7 @@ $ consul watch -type=service -service=redis -tag=bar -tag=foo /usr/bin/my-servic
 
 An example of the output of this command:
 
-```text
+```json
 [
   {
     Node: {
@@ -369,6 +465,16 @@ or `/v1/health/checks/` if monitoring by service.
 
 Here is an example configuration for monitoring by state:
 
+<CodeTabs>
+
+```hcl
+{
+  type = "checks"
+  state = "passing"
+  args = ["/usr/bin/my-check-handler.sh", "-passing"]
+}
+```
+
 ```json
 {
   "type": "checks",
@@ -377,7 +483,19 @@ Here is an example configuration for monitoring by state:
 }
 ```
 
+</CodeTabs>
+
 Here is an example configuration for monitoring by service:
+
+<CodeTabs>
+
+```hcl
+{
+  type = "checks"
+  service = "redis"
+  args = ["/usr/bin/my-check-handler.sh", "-redis"]
+}
+```
 
 ```json
 {
@@ -386,6 +504,8 @@ Here is an example configuration for monitoring by service:
   "args": ["/usr/bin/my-check-handler.sh", "-redis"]
 }
 ```
+
+</CodeTabs>
 
 Or, using the watch command:
 
@@ -429,6 +549,16 @@ This maps to the `/v1/event/list` API internally.
 
 Here is an example configuration:
 
+<CodeTabs>
+
+```hcl
+{
+  type = "event"
+  name = "web-deploy"
+  args = ["/usr/bin/my-event-handler.sh", "-web-deploy"]
+}
+```
+
 ```json
 {
   "type": "event",
@@ -436,6 +566,8 @@ Here is an example configuration:
   "args": ["/usr/bin/my-event-handler.sh", "-web-deploy"]
 }
 ```
+
+</CodeTabs>
 
 Or, using the watch command:
 
