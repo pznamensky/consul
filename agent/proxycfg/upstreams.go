@@ -90,7 +90,7 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 		}
 		upstreamsSnapshot.WatchedUpstreamEndpoints[uid][targetID] = resp.Nodes
 
-		if s.kind != structs.ServiceKindConnectProxy {
+		if s.kind != structs.ServiceKindConnectProxy || s.proxyCfg.Mode != structs.ProxyModeTransparent {
 			return nil
 		}
 
@@ -100,7 +100,7 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 		upstreamsSnapshot.PassthroughUpstreams[uid][targetID] = make(map[string]struct{})
 
 		for _, node := range resp.Nodes {
-			if snap.Proxy.Mode != structs.ProxyModeTransparent || !node.Service.Proxy.TransparentProxy.DialedDirectly {
+			if !node.Service.Proxy.TransparentProxy.DialedDirectly {
 				continue
 			}
 
