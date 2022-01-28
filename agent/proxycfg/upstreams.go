@@ -97,6 +97,12 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 		if _, ok := upstreamsSnapshot.PassthroughUpstreams[uid]; !ok {
 			upstreamsSnapshot.PassthroughUpstreams[uid] = make(map[string]map[string]struct{})
 		}
+
+		for addr := range upstreamsSnapshot.PassthroughUpstreams[uid][targetID] {
+			if indexed := upstreamsSnapshot.PassthroughIndices[addr]; indexed.targetID == targetID && indexed.upstreamID.Matches(uid) {
+				delete(upstreamsSnapshot.PassthroughIndices, addr)
+			}
+		}
 		upstreamsSnapshot.PassthroughUpstreams[uid][targetID] = make(map[string]struct{})
 
 		for _, node := range resp.Nodes {
@@ -108,6 +114,26 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 			// Datacenter is not considered because transparent proxies cannot dial other datacenters.
 			isRemote := !structs.EqualPartitions(node.Node.PartitionOrDefault(), s.proxyID.PartitionOrDefault())
 			addr, _ := node.BestAddress(isRemote)
+
+			existing := upstreamsSnapshot.PassthroughIndices[addr]
+
+			if existing.idx > u.Meta.Index {
+				// The last known instance with this address had a higher index so it takes precedence.
+				continue
+			}
+
+			// The current instance has a higher Raft index so we ensure the passthrough address is only
+			// associated with this upstream target. Older associations are cleaned up as needed.
+			delete(upstreamsSnapshot.PassthroughUpstreams[existing.upstreamID][existing.targetID], addr)
+			if len(upstreamsSnapshot.PassthroughUpstreams[existing.upstreamID][existing.targetID]) == 0 {
+				delete(upstreamsSnapshot.PassthroughUpstreams[existing.upstreamID], existing.targetID)
+			}
+			if len(upstreamsSnapshot.PassthroughUpstreams[existing.upstreamID]) == 0 {
+				delete(upstreamsSnapshot.PassthroughUpstreams, existing.upstreamID)
+			}
+
+			// TODO(freddy): is u.Meta.Index the right index to associate with this instance?
+			upstreamsSnapshot.PassthroughIndices[addr] = indexedTarget{idx: u.Meta.Index, upstreamID: uid, targetID: targetID}
 			upstreamsSnapshot.PassthroughUpstreams[uid][targetID][addr] = struct{}{}
 		}
 

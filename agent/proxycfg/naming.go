@@ -13,6 +13,13 @@ type UpstreamID struct {
 	structs.EnterpriseMeta
 }
 
+func (u UpstreamID) Matches(other UpstreamID) bool {
+	return u.Type == other.Type &&
+		u.Name == other.Name &&
+		u.Datacenter == other.Datacenter &&
+		u.EnterpriseMeta.Matches(&other.EnterpriseMeta)
+}
+
 func NewUpstreamID(u *structs.Upstream) UpstreamID {
 	id := UpstreamID{
 		Type:       u.DestinationType,
