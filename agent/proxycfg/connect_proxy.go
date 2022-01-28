@@ -327,7 +327,7 @@ func (s *handlerConnectProxy) handleUpdate(ctx context.Context, u cache.UpdateEv
 				delete(snap.ConnectProxy.WatchedDiscoveryChains, uid)
 			}
 		}
-		for uid, _ := range snap.ConnectProxy.PassthroughUpstreams {
+		for uid := range snap.ConnectProxy.PassthroughUpstreams {
 			if _, ok := seenUpstreams[uid]; !ok {
 				delete(snap.ConnectProxy.PassthroughUpstreams, uid)
 
