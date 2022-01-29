@@ -94,16 +94,16 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 			return nil
 		}
 
-		if _, ok := upstreamsSnapshot.PassthroughUpstreams[uid]; !ok {
-			upstreamsSnapshot.PassthroughUpstreams[uid] = make(map[string]map[string]struct{})
+		if _, ok := upstreamsSnapshot.PassthroughUpstreams[uid]; ok {
+			for addr := range upstreamsSnapshot.PassthroughUpstreams[uid][targetID] {
+				if indexed := upstreamsSnapshot.PassthroughIndices[addr]; indexed.targetID == targetID && indexed.upstreamID.Matches(uid) {
+					delete(upstreamsSnapshot.PassthroughIndices, addr)
+				}
+			}
+			upstreamsSnapshot.PassthroughUpstreams[uid][targetID] = make(map[string]struct{})
 		}
 
-		for addr := range upstreamsSnapshot.PassthroughUpstreams[uid][targetID] {
-			if indexed := upstreamsSnapshot.PassthroughIndices[addr]; indexed.targetID == targetID && indexed.upstreamID.Matches(uid) {
-				delete(upstreamsSnapshot.PassthroughIndices, addr)
-			}
-		}
-		upstreamsSnapshot.PassthroughUpstreams[uid][targetID] = make(map[string]struct{})
+		passthroughs := make(map[string]struct{})
 
 		for _, node := range resp.Nodes {
 			if !node.Service.Proxy.TransparentProxy.DialedDirectly {
@@ -134,7 +134,12 @@ func (s *handlerUpstreams) handleUpdateUpstreams(ctx context.Context, u cache.Up
 
 			// TODO(freddy): is u.Meta.Index the right index to associate with this instance?
 			upstreamsSnapshot.PassthroughIndices[addr] = indexedTarget{idx: u.Meta.Index, upstreamID: uid, targetID: targetID}
-			upstreamsSnapshot.PassthroughUpstreams[uid][targetID][addr] = struct{}{}
+			passthroughs[addr] = struct{}{}
+		}
+		if len(passthroughs) > 0 {
+			upstreamsSnapshot.PassthroughUpstreams[uid] = map[string]map[string]struct{}{
+				targetID: passthroughs,
+			}
 		}
 
 	case strings.HasPrefix(u.CorrelationID, "mesh-gateway:"):
