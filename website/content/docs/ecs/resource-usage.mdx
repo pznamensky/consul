@@ -1,0 +1,33 @@
+---
+layout: docs
+page_title: Resource Usage - AWS ECS
+description: >-
+  Resource usage of the Consul Service Mesh on AWS ECS (Elastic Container Service).
+---
+
+# Resource Usage
+
+We ran performance tests on Consul on ECS to determine the resource usage of
+the sidecar containers Consul on ECS injects along with the ACL controller.
+[The architecture page](/docs/ecs/architecture) describes each Consul on ECS
+component in depth.
+
+We ran performance tests by deploying clusters of varying sizes and measuring
+resource usage during conditions that stress Consul on ECS components. After
+each iteration of performance testing, we recorded resource usages of each
+component to determine worst-case scenario resource usage in a production
+environment. During performance testing, we used ECS' minimum allowable CPU and memory
+resources, 256 CPU shares and 512 MB of memory, to demonstrate that
+Consul on ECS along with application containers can run on the smallest ECS
+tasks. Here is the maximum resource usage we observed for each container:
+
+| Container      | CPU | Memory |
+| -------------- | --- | ------ |
+| ACL Controller | 5%  | 43 MB  |
+| Health Sync    | 6%  | 35 MB  |
+| Consul Client  | 10% | 87 MB  |
+| Envoy          | 18% | 55 MB  |
+
+As shown above, Consul on ECS’ containers use well under the minimum CPU and
+memory limits for an ECS Task. `memory` and `cpu` can be passed into Mesh Init
+if additional resources are necessary.

@@ -616,6 +616,10 @@
         "path": "ecs/requirements"
       },
       {
+        "title": "Resource Usage",
+        "path": "ecs/resource-usage"
+      },
+      {
         "title": "Install with Terraform",
         "routes": [
           {
