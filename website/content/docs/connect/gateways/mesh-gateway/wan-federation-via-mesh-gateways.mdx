@@ -7,12 +7,10 @@ description: |-
 
 # WAN Federation via Mesh Gateways
 
--> **1.8.0+:** This feature is available in Consul versions 1.8.0 and higher
-
 ~> This topic requires familiarity with [mesh gateways](/docs/connect/gateways/mesh-gateway/service-to-service-traffic-datacenters).
 
-WAN federation via mesh gateways allows for Consul servers in different datacenters
-to be federated exclusively through mesh gateways.
+Cross-DC control plane communication, also known as WAN federation,
+allows for Consul servers in different datacenters to be federated exclusively through mesh gateways.
 
 When setting up a
 [multi-datacenter](https://learn.hashicorp.com/tutorials/consul/federarion-gossip-wan)
@@ -41,6 +39,13 @@ security surface area can elect to join these datacenters together using [mesh
 gateways](/docs/connect/gateways/mesh-gateway/service-to-service-traffic-datacenters) to do so.
 
 [![WAN federation with mesh gateways](/img/wan-federation-connectivity-mesh-gateways.png)](/img/wan-federation-connectivity-mesh-gateways.png)
+
+## Requirements
+
+- Consul 1.8.0+
+- Mesh federation between Consul datacenters: all datacenters must be connected to all other datacenters
+   - Other topologies, such as [hub-and-spoke enabled by Consul Enterprise network areas](https://learn.hashicorp.com/tutorials/consul/federation-network-areas),
+     cannot be used
 
 ## Architecture
 
